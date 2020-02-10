@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"reflect"
+	"regexp"
 	"strings"
 	"text/template"
+	"text/template/parse"
 	"time"
 
 	"github.com/go-kit/kit/log"
@@ -113,9 +115,25 @@ func (o *templateStage) Process(labels model.LabelSet, extracted map[string]inte
 		}
 
 	} else {
-		td := templateData{}
+		templateData := make(map[string]interface{})
+		for _, node := range o.template.Root.Nodes {
+			if node.Type() == parse.NodeAction {
+				source := strings.Trim(regexp.MustCompile(`\.\S+[^\s}]`).FindString(node.String()), ".")
+				if v, ok := extracted[source]; ok {
+					s, err := getString(v)
+					if err != nil {
+						if Debug {
+							level.Debug(o.logger).Log("msg", "extracted template could not be converted to a string", "err", err, "type", reflect.TypeOf(v).String())
+						}
+						return
+					}
+					templateData[source] = s
+				}
+
+			}
+		}
 		buf := &bytes.Buffer{}
-		err := o.template.Execute(buf, td)
+		err := o.template.Execute(buf, templateData)
 		if err != nil {
 			if Debug {
 				level.Debug(o.logger).Log("msg", "failed to execute template on extracted value", "err", err, "value", v)

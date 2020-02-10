@@ -125,6 +125,21 @@ func TestTemplateStage_Process(t *testing.T) {
 				"missing":    "newval",
 			},
 		},
+		"template with multiple keys": {
+			TemplateConfig{
+				Source:   "output_msg",
+				Template: "{{ .level }} for app {{ .app | ToUpper }}",
+			},
+			map[string]interface{}{
+				"level": "WARN",
+				"app":   "loki",
+			},
+			map[string]interface{}{
+				"level":      "WARN",
+				"app":        "loki",
+				"output_msg": "WARN for app LOKI",
+			},
+		},
 		"ToLower": {
 			TemplateConfig{
 				Source:   "testval",

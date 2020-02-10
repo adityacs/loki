@@ -60,6 +60,17 @@ contained `app` with a value of `LOKI`, this pipeline would change its value to
 
 ```yaml
 - template:
+    source: output_msg
+    template: '{{ .level }} for app {{ ToUpper .app }}'
+```
+
+This pipeline takes the current value of `level` and `app` from the extracted map and
+converts value of `app` to uppercase. For example, if the extracted map
+contained `app` with a value of `loki`, this pipeline would change its value to
+`LOKI`. Assuming value of `level` is `WARN`. A new key `output_msg` will be added to extraced map with value `WARN for app LOKI`. 
+
+```yaml
+- template:
     source: app
     template: '{{ Replace .Value "loki" "blokey" 1 }}'
 ```
