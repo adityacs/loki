@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/cortexproject/cortex/pkg/util/flagext"
 	"github.com/prometheus/common/model"
 	"github.com/weaveworks/common/server"
 
@@ -25,6 +26,25 @@ type Config struct {
 	PushConfig             *PushTargetConfig                `yaml:"loki_push_api,omitempty"`
 	RelabelConfigs         []*relabel.Config                `yaml:"relabel_configs,omitempty"`
 	ServiceDiscoveryConfig sd_config.ServiceDiscoveryConfig `yaml:",inline"`
+	S3Config               *S3Targetconfig                  `yaml:"aws,omitempty"`
+}
+
+// S3TargetConfig describes s3 targets to scrape
+type S3Targetconfig struct {
+	// S3-compatible URL to connect to
+	S3 flagext.URLValue `yaml:"s3"`
+
+	// Labels optionally holds labels to associate with each record read from S3 objects.
+	Labels model.LabelSet `yaml:"labels"`
+
+	// Prefix to be use to look for objects in buckets
+	Prefix string `yaml:"prefix"`
+
+	// Set to true to force the request to use path-style addressing
+	S3ForcePathStyle bool `yaml:"s3forcepathstyle"`
+
+	// How often to look for new objects
+	SyncPeriod time.Duration `yaml:"sync_period"`
 }
 
 // JournalTargetConfig describes systemd journal records to scrape.

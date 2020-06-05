@@ -12,6 +12,7 @@ import (
 	"github.com/grafana/loki/pkg/promtail/targets/file"
 	"github.com/grafana/loki/pkg/promtail/targets/journal"
 	"github.com/grafana/loki/pkg/promtail/targets/lokipush"
+	"github.com/grafana/loki/pkg/promtail/targets/objectstore"
 	"github.com/grafana/loki/pkg/promtail/targets/stdin"
 	"github.com/grafana/loki/pkg/promtail/targets/syslog"
 	"github.com/grafana/loki/pkg/promtail/targets/target"
@@ -44,6 +45,7 @@ func NewTargetManagers(
 	var journalScrapeConfigs []scrapeconfig.Config
 	var syslogScrapeConfigs []scrapeconfig.Config
 	var pushScrapeConfigs []scrapeconfig.Config
+	var s3ScrapeConfigs []scrapeconfig.Config
 
 	if targetConfig.Stdin {
 		level.Debug(util.Logger).Log("msg", "configured to read from stdin")
@@ -121,6 +123,19 @@ func NewTargetManagers(
 			return nil, errors.Wrap(err, "failed to make Loki Push API target manager")
 		}
 		targetManagers = append(targetManagers, pushTargetManager)
+
+	}
+	for _, cfg := range scrapeConfigs {
+		if cfg.S3Config != nil {
+			s3ScrapeConfigs = append(s3ScrapeConfigs, cfg)
+		}
+	}
+	if len(s3ScrapeConfigs) > 0 {
+		s3TargetManager, err := objectstore.NewS3TargetManager(logger, positions, client, s3ScrapeConfigs)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to make s3 target manager")
+		}
+		targetManagers = append(targetManagers, s3TargetManager)
 	}
 
 	return &TargetManagers{
