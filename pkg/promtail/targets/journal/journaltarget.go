@@ -180,9 +180,15 @@ func journalTargetWithReader(
 	}
 
 	go func() {
-		err := t.r.Follow(until, ioutil.Discard)
-		if err != nil && err != sdjournal.ErrExpired {
-			level.Error(t.logger).Log("msg", "received error during sdjournal follow", "err", err.Error())
+		// we don't have to worry about cpu usage with this infinite loop
+		for {
+			err := t.r.Follow(until, ioutil.Discard)
+			if err == sdjournal.ErrExpired {
+				return
+			}
+			if err != nil {
+				level.Error(t.logger).Log("msg", "received error during sdjournal follow", "err", err.Error())
+			}
 		}
 	}()
 
